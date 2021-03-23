@@ -1,0 +1,51 @@
+---
+# tasks file for webserver
+
+- name: "Install required packages"
+  become: yes
+  yum:
+    name:
+      - httpd
+      - php
+      - php-mysql
+      - git
+    state: present
+
+# Apache
+
+- name: "Configure Apache"
+  become: yes
+  replace:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: 'index.html'
+    replace: 'index.php'
+
+- name: "Start and enable Apache"
+  become: yes
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+
+# Code
+
+- name: "Download code"
+  become: yes
+  git:
+    repo: https://github.com/kodekloudhub/learning-app-ecommerce.git
+    dest: /var/www/html/
+    force: yes
+
+- name: "Replace database IP"
+  become: yes
+  replace:
+    path: /var/www/html/index.php
+    regexp: '172.20.1.101'
+    replace: '{{ hostvars[groups._dbserver[0]]["private_ip"] }}'
+
+- name: "Add webserver IP for testing purposes"
+  become: yes
+  replace:
+    path: /var/www/html/index.php
+    regexp: 'at the lowest price'
+    replace: '{{ public_ip_address }}'    

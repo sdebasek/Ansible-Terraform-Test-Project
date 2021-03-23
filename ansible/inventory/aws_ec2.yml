@@ -1,0 +1,20 @@
+---
+plugin: aws_ec2
+aws_profile: default
+regions:
+  - eu-central-1
+filters:
+  tag:Task:
+    - dbserver
+    - webserver
+  instance-state-name : running
+keyed_groups:
+  - key: tags.Task
+compose:
+  ansible_host: public_ip_address
+  private_ip: private_ip_address
+# keyed_groups:
+#   key: tags['web']
+#   prefix: web
+# groups:
+#   webservers: "'web' in (tags|list)"

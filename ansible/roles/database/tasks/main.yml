@@ -1,0 +1,72 @@
+---
+# tasks file for database
+
+# Security/firewall
+- name: "Install MySQL-Python dependency"
+  become: yes
+  yum:
+    name: MySQL-python, python-pip # check if pip is needed
+    state: latest
+
+# MySQL install and configure
+- name: "Install MariaDB"
+  become: yes
+  yum:
+    name: mariadb-server
+    state: latest    
+
+- name: "Start and enable MariaDB"
+  become: yes
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+
+#MySQL database creation and import
+- name: "Delete previous database"
+  community.mysql.mysql_db:
+    name: ecomdb
+    login_user: root
+    login_password:
+    state: absent
+
+- name: "Delete previous users"
+  community.mysql.mysql_user:
+    login_user: root
+    login_password: 
+    name: ecomuser
+    host_all: yes
+    state: absent
+
+- name: "Create new database"
+  community.mysql.mysql_db:
+    name: ecomdb
+    login_user: root
+    login_password:
+    state: present
+
+
+- name: "Create new user"
+  community.mysql.mysql_user:
+    name: ecomuser
+    login_user: root
+    login_password:
+    host: '{{ hostvars[item]["private_ip"] }}'
+    password: 'ecompassword'
+    priv: '*.*:ALL'
+    state: present
+  loop: "{{ groups._webserver }}"
+
+- name: "Copy SQL dump"
+  copy:
+    src: db-upload.sql
+    dest: ~/db-upload.sql
+
+- name: "Import database data"
+  community.mysql.mysql_db:
+    state: import
+    login_user: root
+    login_password:
+    name: ecomdb
+    encoding: latin1
+    target: ~/db-upload.sql
